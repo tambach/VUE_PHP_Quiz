@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <!-- Required meta tags -->
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+ 
+        <title> Famous Quote Quiz </title>
+
+		<!-- Bootstrap 4 CSS and custom CSS -->
+		<script src="https://cdn.jsdelivr.net/npm/vue@2.6.10/dist/vue.js"></script>
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous" />
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+		<link rel="stylesheet" type="text/css" href="custom.css" />
+
+    </head>
+<body>
+ <div id="app">
+
+<!-- navbar -->
+<nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
+    <a class="navbar-brand" href="#">Navbar</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+        <div class="navbar-nav">
+            <a class="nav-item nav-link" href="#" id='home'>Home</a>
+            <a class="nav-item nav-link" href="#" id='update_account'>Account</a>
+            <a class="nav-item nav-link" href="#" id='logout'>Logout</a>
+            <a class="nav-item nav-link" href="#" id='login'>Login</a>
+            <a class="nav-item nav-link" href="#" id='sign_up'>Sign Up</a>
+        </div>
+    </div>
+</nav>
+
+<!-- /navbar -->
+ 
+<!-- container -->
+<main role="main" class="container starter-template">
+    <div class="row">
+        <div class="col">
+
+ <div   class="col-lg-6"  style="padding-top: 30px" v-if="startbtn">
+        <el-button type="primary" @click="showQuiz=true; startbtn=false" > 
+             Start Quiz
+        </el-button>
+</div>
+
+<div class="row" id="showquiz" v-if="showQuiz" >
+  <section class="container">
+    <div class="questionBox" >
+
+        <div class="questionContainer" v-if="questionIndex<questions.length" v-bind:key="questionIndex">
+
+          <header>
+            <h1 class="title is-6"> Vue Quiz </h1>
+            <div class="progressContainer">
+
+              <progress class="progress is-info is-small" :value="(questionIndex/questions.length)*100" max="100">
+              {{(questionIndex/questions.length)*100}}%</progress>
+              <p>{{ Number(((questionIndex/questions.length)*100).toFixed(1))}}% complete</p>
+            </div>
+          </header>
+          <h2 class="titleContainer title">{{ questions[questionIndex].question }}</h2>
+
+          <div class="optionContainer">
+              <el-button round  @click="selectOption(1)" >{{ questions[questionIndex].option1  }}</el-button>
+              <el-button round  @click="selectOption(2)" >{{ questions[questionIndex].option2  }}</el-button>
+              <el-button round  @click="selectOption(3)" >{{ questions[questionIndex].option3  }}</el-button>
+          </div>
+        </div>    
+
+          <div v-if="showResult"  >           
+            <h3 class="subtitle">
+              Total score: {{result}} / {{questions.length}}
+            </h3>
+              <br>
+            <el-button  round @click="restart()"> Restart </el-button>
+          </div>
+      </div>
+  </section>
+</div>
+
+
+            <!-- where prompt / messages will appear -->
+            <div id="response">{{response}}</div>
+ 
+            <!-- where main content will appear -->
+            <div id="content"></div>
+        </div>
+    </div>
+</main>
+</div>
+<!-- /container -->
+<!-- jQuery & Bootstrap 4 JavaScript libraries -->
+<script src="https://code.jquery.com/jquery-3.2.1.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+ 
+<script type="text/javascript" src="auth.js"></script>
+
+<script src="https://unpkg.com/vue/dist/vue.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+
+	<script >
+
+ 
+	var app= new Vue({
+	el: '#app',
+	data: {
+		showQuiz : false,
+    startbtn : false,
+		questions : [],
+    response : '',
+		selectedOption : null,
+		result : 0,
+    logined : false,
+		showResult : false,
+        questionIndex: 0,
+        userResponses: [],
+        isActive: false
+	},
+	methods: {
+		getAllQuestios(){
+      console.log('getallquestion');
+			axios.get('http://localhost:8084/api.php?action=read')
+			.then(function(response){
+				if(response.data.error){
+					cosole.log('error while fetchig data from api');
+				}
+				else{
+					app.questions = response.data.quotes;
+					this.userResponses=Array(app.questions.length).fill(null);
+				}
+			});
+		},
+		restart(){
+			 	this.questionIndex=0;
+		 		this.userResponses=Array(this.questions.length).fill(null);
+		 		this.result = 0;
+		 		this.showResult = false;
+		 },
+      selectOption: function(index) {
+      	console.log(this.questionIndex);
+      	if(this.questionIndex >= this.questions.length-1)
+      	{
+      		console.log('finish');
+            	this.showResult = true;
+      	}
+         Vue.set(this.userResponses, this.questionIndex, index);
+         if ( this.questions[this.questionIndex].answer_id == index ) 
+         	{
+         		this.$message({
+                                type: 'success',
+                                message: 'Correct! The right answer is ' + this.questions[this.questionIndex].answer
+                            });
+               this.result = this.result + 1;
+                if (this.questionIndex < this.questions.length)
+            this.questionIndex++;
+            }
+            else{
+            	this.$message({
+                        type: 'error',
+                        message: 'Sorry, you are wrong! The right answer is ' + this.questions[this.questionIndex].answer
+                            });
+            	 if (this.questionIndex < this.questions.length)
+            this.questionIndex++;
+            }
+
+
+      },
+      next: function() {
+         if (this.questionIndex < this.questions.length)
+            this.questionIndex++;
+      },
+
+      prev: function() {
+         if (this.questions.length > 0) 
+         	 this.questionIndex--;
+      },
+      score: function() {
+         var score = 0;
+         for (let i = 0; i < this.userResponses.length; i++) {
+            if (
+               this.questions[i].answer_id == this.userResponses[i]
+            ) {
+            	console.log('yes bb');
+               score = score + 1;
+            }
+         }
+         console.log(score);
+         return score;
+      }
+      
+	},
+	
+mounted(){
+	this.getAllQuestios();
+}
+
+});
+</script>
+
+
+</body>
+</html>
